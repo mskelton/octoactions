@@ -3,8 +3,11 @@ import { defineConfig } from "wxt"
 export default defineConfig({
   manifest: {
     name: "OctoActions",
-    description: "Adds an Approve & Merge button to GitHub pull requests.",
+    description: "Adds extra actions to GitHub pull requests.",
     permissions: ["storage"],
-    host_permissions: ["https://github.com/*", "https://api.github.com/*"],
+    host_permissions: ["https://github.com/*"],
+    icons: {
+      128: "/icon.png",
+    },
   },
 })

@@ -37,7 +37,7 @@ async function githubFetch(
   })
 }
 
-export async function getPrAuthor(pr: PrLocation): Promise<string> {
+async function getPrNodeId(pr: PrLocation): Promise<string> {
   const res = await githubFetch(
     `/repos/${pr.owner}/${pr.repo}/pulls/${pr.number}`
   )
@@ -48,7 +48,49 @@ export async function getPrAuthor(pr: PrLocation): Promise<string> {
     )
   }
   const data = await res.json()
-  return data.user.login
+  return data.node_id
+}
+
+async function graphqlMutation(
+  query: string,
+  variables: Record<string, unknown>,
+  errorPrefix: string
+): Promise<void> {
+  const res = await githubFetch("/graphql", {
+    method: "POST",
+    body: JSON.stringify({ query, variables }),
+  })
+
+  const body = await res.json()
+  if (body.errors?.length) {
+    throw new Error(`${errorPrefix}: ${body.errors[0].message}`)
+  }
+}
+
+export async function markReadyForReview(pr: PrLocation): Promise<void> {
+  const pullRequestId = await getPrNodeId(pr)
+  await graphqlMutation(
+    `mutation($pullRequestId: ID!) {
+      markPullRequestReadyForReview(input: { pullRequestId: $pullRequestId }) {
+        pullRequest { isDraft }
+      }
+    }`,
+    { pullRequestId },
+    "Failed to mark ready"
+  )
+}
+
+export async function convertToDraft(pr: PrLocation): Promise<void> {
+  const pullRequestId = await getPrNodeId(pr)
+  await graphqlMutation(
+    `mutation($pullRequestId: ID!) {
+      convertPullRequestToDraft(input: { pullRequestId: $pullRequestId }) {
+        pullRequest { isDraft }
+      }
+    }`,
+    { pullRequestId },
+    "Failed to convert to draft"
+  )
 }
 
 export async function approvePr(pr: PrLocation): Promise<void> {
@@ -68,20 +110,17 @@ export async function approvePr(pr: PrLocation): Promise<void> {
 }
 
 export async function mergePr(pr: PrLocation): Promise<void> {
-  const res = await githubFetch(
-    `/repos/${pr.owner}/${pr.repo}/pulls/${pr.number}/merge`,
-    {
-      method: "PUT",
-      body: JSON.stringify({
-        merge_method:
-          (await storage.getItem<string>("local:merge-method")) || "squash",
-      }),
-    }
+  const mergeMethod =
+    (await storage.getItem<string>("local:merge-method")) || "SQUASH"
+
+  const pullRequestId = await getPrNodeId(pr)
+  await graphqlMutation(
+    `mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
+      enablePullRequestAutoMerge(input: { pullRequestId: $pullRequestId, mergeMethod: $mergeMethod }) {
+        pullRequest { autoMergeRequest { enabledAt } }
+      }
+    }`,
+    { pullRequestId, mergeMethod: mergeMethod.toUpperCase() },
+    "Failed to enable auto-merge"
   )
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(
-      `Failed to merge PR: ${res.status} ${body.message || res.statusText}`
-    )
-  }
 }
