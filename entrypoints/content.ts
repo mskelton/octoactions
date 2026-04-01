@@ -32,20 +32,13 @@ export default defineContentScript({
         actionsContainer.append(
           createActionButton({
             title: 'Approve',
-            icon: CHECK_ICON,
+            icon: THUMBSUP_ICON,
             action: () => approvePr(pr),
           }),
         )
       }
 
-      const draft = isDraftPr()
-      actionsContainer.append(
-        createActionButton({
-          title: draft ? 'Mark as ready' : 'Convert to draft',
-          icon: draft ? EYE_ICON : EYE_SLASH_ICON,
-          action: () => (draft ? markReadyForReview(pr) : convertToDraft(pr)),
-        }),
-      )
+      actionsContainer.append(createDraftToggleButton(pr))
 
       actionsContainer.append(
         createActionButton({
@@ -72,9 +65,14 @@ export default defineContentScript({
   },
 })
 
-// Checkmark icon (approve)
+// Checkmark icon (success state)
 const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="octicon">
   <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>
+</svg>`
+
+// Thumbs-up icon (approve)
+const THUMBSUP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="octicon">
+  <path d="M8.347.631A.75.75 0 0 1 9.123.26l.238.04a3.25 3.25 0 0 1 2.591 4.098L11.494 6h.665a3.25 3.25 0 0 1 3.118 4.167l-1.135 3.859A2.751 2.751 0 0 1 11.503 16H6.586a3.75 3.75 0 0 1-2.184-.702A1.75 1.75 0 0 1 3 16H1.75A1.75 1.75 0 0 1 0 14.25v-6.5C0 6.784.784 6 1.75 6h3.417a.25.25 0 0 0 .217-.127ZM4.75 13.649l.396.33c.404.337.914.521 1.44.521h4.917a1.25 1.25 0 0 0 1.2-.897l1.135-3.859A1.75 1.75 0 0 0 12.159 7.5H10.5a.75.75 0 0 1-.721-.956l.731-2.558a1.75 1.75 0 0 0-1.127-2.14L6.69 6.611a1.75 1.75 0 0 1-1.523.889H4.75ZM3.25 7.5h-1.5a.25.25 0 0 0-.25.25v6.5c0 .138.112.25.25.25H3a.25.25 0 0 0 .25-.25Z"/>
 </svg>`
 
 // Eye icon (ready for review)
@@ -92,6 +90,12 @@ const MERGE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="1
   <path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218ZM4.25 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8.5-4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z"/>
 </svg>`
 
+// Loading spinner
+const SPINNER_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="octicon" style="animation: octoactions-spin 1s linear infinite">
+  <path d="M8 0a8 8 0 1 0 8 8h-1.5A6.5 6.5 0 1 1 8 1.5Z"/>
+  <style>@keyframes octoactions-spin { to { transform: rotate(360deg) } }</style>
+</svg>`
+
 const BUTTON_STYLES = {
   width: '32px',
   height: '32px',
@@ -102,10 +106,7 @@ const BUTTON_STYLES = {
 }
 
 function isDraftPr(): boolean {
-  const stateLabel = document.querySelector('[title="Status: Draft"], [data-name="draft"]')
-  if (stateLabel) return true
-  const stateBadge = document.querySelector('.State')
-  return stateBadge?.textContent?.trim() === 'Draft'
+  return !!document.querySelector('[class*="StateLabel"][data-status="draft"]')
 }
 
 function isOwnPr(): boolean {
@@ -143,11 +144,10 @@ function createActionButton({ title, icon, action }: ActionButtonOptions): HTMLB
     button.disabled = true
 
     try {
-      button.textContent = '…'
+      button.innerHTML = SPINNER_ICON
       await action()
 
       button.innerHTML = CHECK_ICON
-      button.classList.add('btn-primary')
       setTimeout(() => resetButton(button, icon), 2000)
     } catch {
       resetButton(button, icon)
@@ -157,4 +157,49 @@ function createActionButton({ title, icon, action }: ActionButtonOptions): HTMLB
   })
 
   return button
+}
+
+function createDraftToggleButton(pr: PrLocation): HTMLButtonElement {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'btn octoactions-btn'
+  Object.assign(button.style, BUTTON_STYLES)
+  updateDraftButton(button)
+
+  // Watch the state label for changes to keep button in sync
+  const stateLabel = document.querySelector('[class*="StateLabel"]')
+  if (stateLabel) {
+    new MutationObserver(() => {
+      if (!button.disabled) updateDraftButton(button)
+    }).observe(stateLabel, { attributes: true, childList: true, subtree: true })
+  }
+
+  button.addEventListener('click', async () => {
+    if (button.disabled) return
+    button.disabled = true
+
+    const draft = isDraftPr()
+    try {
+      button.innerHTML = SPINNER_ICON
+      await (draft ? markReadyForReview(pr) : convertToDraft(pr))
+
+      button.innerHTML = CHECK_ICON
+      setTimeout(() => updateDraftButton(button), 2000)
+    } catch {
+      updateDraftButton(button)
+      button.classList.add('btn-danger')
+      setTimeout(() => updateDraftButton(button), 3000)
+    }
+  })
+
+  return button
+}
+
+function updateDraftButton(button: HTMLButtonElement) {
+  const draft = isDraftPr()
+  button.title = draft ? 'Mark as ready' : 'Convert to draft'
+  button.innerHTML = draft ? EYE_ICON : EYE_SLASH_ICON
+  button.className = 'btn octoactions-btn'
+  Object.assign(button.style, BUTTON_STYLES)
+  button.disabled = false
 }
