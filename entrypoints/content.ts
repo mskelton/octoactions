@@ -1,8 +1,15 @@
-import { approvePr, convertToDraft, markReadyForReview, mergePr, parsePrUrl, type PrLocation } from "@/lib/github-api"
+import {
+  approvePr,
+  convertToDraft,
+  markReadyForReview,
+  mergePr,
+  parsePrUrl,
+  type PrLocation,
+} from '@/lib/github-api'
 
 export default defineContentScript({
-  matches: ["https://github.com/*/pull/*"],
-  runAt: "document_idle",
+  matches: ['https://github.com/*/pull/*'],
+  runAt: 'document_idle',
 
   main() {
     let currentUrl = location.href
@@ -15,34 +22,38 @@ export default defineContentScript({
       // Find the header actions container
       const actionsContainer =
         document.querySelector<HTMLElement>('[data-component="PH_Actions"]') ??
-        document.querySelector<HTMLElement>(
-          '[class*="PageHeader-Actions"]'
-        ) ??
-        document.querySelector<HTMLElement>(".gh-header-actions")
+        document.querySelector<HTMLElement>('[class*="PageHeader-Actions"]') ??
+        document.querySelector<HTMLElement>('.gh-header-actions')
 
       if (!actionsContainer) return
-      if (actionsContainer.querySelector(".octoactions-btn")) return
+      if (actionsContainer.querySelector('.octoactions-btn')) return
 
       if (!isOwnPr()) {
-        actionsContainer.append(createActionButton({
-          title: "Approve",
-          icon: CHECK_ICON,
-          action: () => approvePr(pr),
-        }))
+        actionsContainer.append(
+          createActionButton({
+            title: 'Approve',
+            icon: CHECK_ICON,
+            action: () => approvePr(pr),
+          }),
+        )
       }
 
       const draft = isDraftPr()
-      actionsContainer.append(createActionButton({
-        title: draft ? "Mark as ready" : "Convert to draft",
-        icon: draft ? EYE_ICON : EYE_SLASH_ICON,
-        action: () => draft ? markReadyForReview(pr) : convertToDraft(pr),
-      }))
+      actionsContainer.append(
+        createActionButton({
+          title: draft ? 'Mark as ready' : 'Convert to draft',
+          icon: draft ? EYE_ICON : EYE_SLASH_ICON,
+          action: () => (draft ? markReadyForReview(pr) : convertToDraft(pr)),
+        }),
+      )
 
-      actionsContainer.append(createActionButton({
-        title: "Merge",
-        icon: MERGE_ICON,
-        action: () => mergePr(pr),
-      }))
+      actionsContainer.append(
+        createActionButton({
+          title: 'Merge',
+          icon: MERGE_ICON,
+          action: () => mergePr(pr),
+        }),
+      )
 
       mounted = true
     }
@@ -81,25 +92,34 @@ const MERGE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="1
   <path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218ZM4.25 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8.5-4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z"/>
 </svg>`
 
-const BUTTON_STYLES = { width: "32px", height: "32px", padding: "0", display: "inline-flex", alignItems: "center", justifyContent: "center" }
+const BUTTON_STYLES = {
+  width: '32px',
+  height: '32px',
+  padding: '0',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}
 
 function isDraftPr(): boolean {
   const stateLabel = document.querySelector('[title="Status: Draft"], [data-name="draft"]')
   if (stateLabel) return true
   const stateBadge = document.querySelector('.State')
-  return stateBadge?.textContent?.trim() === "Draft"
+  return stateBadge?.textContent?.trim() === 'Draft'
 }
 
 function isOwnPr(): boolean {
   const currentUser = document.querySelector<HTMLMetaElement>('meta[name="user-login"]')?.content
-  const authorLink = document.querySelector<HTMLAnchorElement>('[class*="PullRequestHeaderSummary"] a[data-hovercard-type="user"]')
-  const prAuthor = authorLink?.getAttribute("href")?.replace("/", "")
+  const authorLink = document.querySelector<HTMLAnchorElement>(
+    '[class*="PullRequestHeaderSummary"] a[data-hovercard-type="user"]',
+  )
+  const prAuthor = authorLink?.getAttribute('href')?.replace('/', '')
   return !!currentUser && currentUser === prAuthor
 }
 
 function resetButton(button: HTMLButtonElement, innerHTML: string) {
   button.innerHTML = innerHTML
-  button.className = "btn octoactions-btn"
+  button.className = 'btn octoactions-btn'
   Object.assign(button.style, BUTTON_STYLES)
   button.disabled = false
 }
@@ -111,27 +131,27 @@ interface ActionButtonOptions {
 }
 
 function createActionButton({ title, icon, action }: ActionButtonOptions): HTMLButtonElement {
-  const button = document.createElement("button")
-  button.type = "button"
-  button.className = "btn octoactions-btn"
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'btn octoactions-btn'
   Object.assign(button.style, BUTTON_STYLES)
   button.title = title
   button.innerHTML = icon
 
-  button.addEventListener("click", async () => {
+  button.addEventListener('click', async () => {
     if (button.disabled) return
     button.disabled = true
 
     try {
-      button.textContent = "…"
+      button.textContent = '…'
       await action()
 
       button.innerHTML = CHECK_ICON
-      button.classList.add("btn-primary")
+      button.classList.add('btn-primary')
       setTimeout(() => resetButton(button, icon), 2000)
     } catch {
       resetButton(button, icon)
-      button.classList.add("btn-danger")
+      button.classList.add('btn-danger')
       setTimeout(() => resetButton(button, icon), 3000)
     }
   })
