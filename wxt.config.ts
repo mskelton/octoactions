@@ -2,7 +2,7 @@ import { defineConfig } from 'wxt'
 
 export default defineConfig({
   manifest: {
-    name: 'OctoActions',
+    name: 'QuickHub',
     description: 'Adds extra actions to GitHub pull requests.',
     permissions: ['storage'],
     host_permissions: ['https://github.com/*'],
