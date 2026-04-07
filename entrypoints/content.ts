@@ -26,7 +26,7 @@ export default defineContentScript({
         document.querySelector<HTMLElement>('.gh-header-actions')
 
       if (!actionsContainer) return
-      if (actionsContainer.querySelector('.quickhub-btn')) return
+      if (actionsContainer.querySelector('.octoactions-btn')) return
 
       actionsContainer.append(createDraftToggleButton(pr))
 
@@ -91,9 +91,9 @@ const MERGE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="1
 </svg>`
 
 // Loading spinner
-const SPINNER_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="octicon" style="animation: quickhub-spin 1s linear infinite">
+const SPINNER_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="octicon" style="animation: octoactions-spin 1s linear infinite">
   <path d="M8 0a8 8 0 1 0 8 8h-1.5A6.5 6.5 0 1 1 8 1.5Z"/>
-  <style>@keyframes quickhub-spin { to { transform: rotate(360deg) } }</style>
+  <style>@keyframes octoactions-spin { to { transform: rotate(360deg) } }</style>
 </svg>`
 
 const BUTTON_STYLES = {
@@ -120,7 +120,7 @@ function isOwnPr(): boolean {
 
 function resetButton(button: HTMLButtonElement, innerHTML: string) {
   button.innerHTML = innerHTML
-  button.className = 'btn quickhub-btn'
+  button.className = 'btn octoactions-btn'
   Object.assign(button.style, BUTTON_STYLES)
   button.disabled = false
 }
@@ -134,7 +134,7 @@ interface ActionButtonOptions {
 function createActionButton({ title, icon, action }: ActionButtonOptions): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
-  button.className = 'btn quickhub-btn'
+  button.className = 'btn octoactions-btn'
   Object.assign(button.style, BUTTON_STYLES)
   button.title = title
   button.innerHTML = icon
@@ -162,7 +162,7 @@ function createActionButton({ title, icon, action }: ActionButtonOptions): HTMLB
 function createDraftToggleButton(pr: PrLocation): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
-  button.className = 'btn quickhub-btn'
+  button.className = 'btn octoactions-btn'
   Object.assign(button.style, BUTTON_STYLES)
   updateDraftButton(button)
 
@@ -199,7 +199,7 @@ function updateDraftButton(button: HTMLButtonElement) {
   const draft = isDraftPr()
   button.title = draft ? 'Mark as ready' : 'Convert to draft'
   button.innerHTML = draft ? EYE_ICON : EYE_SLASH_ICON
-  button.className = 'btn quickhub-btn'
+  button.className = 'btn octoactions-btn'
   Object.assign(button.style, BUTTON_STYLES)
   button.disabled = false
 }

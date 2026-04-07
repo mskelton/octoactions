@@ -1,4 +1,4 @@
-# QuickHub
+# Octo Actions
 
 A browser extension that adds quick action buttons to GitHub pull requests.
 
