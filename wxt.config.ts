@@ -7,7 +7,8 @@ export default defineConfig({
     permissions: ['storage'],
     host_permissions: ['https://github.com/*'],
     icons: {
-      128: '/icon.png',
+      128: '/icon-128.png',
+      512: '/icon-512.png',
     },
   },
 })
