@@ -1,0 +1,376 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="manifest.open_in_tab" content="true" />
+    <title>Octo Actions Settings</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #f6f8fa;
+        --surface: #ffffff;
+        --border: #d1d9e0;
+        --border-muted: #d8dee4;
+        --text: #1f2328;
+        --text-muted: #656d76;
+        --accent: #1f883d;
+        --accent-hover: #1a7f37;
+        --accent-soft: #dafbe1;
+        --danger: #d1242f;
+        --code-bg: #eff1f3;
+        --shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --surface: #151b23;
+          --border: #3d444d;
+          --border-muted: #2a313c;
+          --text: #f0f6fc;
+          --text-muted: #9198a1;
+          --accent: #238636;
+          --accent-hover: #2ea043;
+          --accent-soft: #12261e;
+          --danger: #f85149;
+          --code-bg: #212830;
+          --shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+        }
+      }
+
+      html,
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 48px 24px 96px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+
+      header img {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+      }
+
+      header h1 {
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 1.2;
+        margin-bottom: 2px;
+      }
+
+      header p {
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .card h2 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .card .card-description {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+
+      .mode-options {
+        display: grid;
+        gap: 8px;
+      }
+
+      .mode-option {
+        display: flex;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 0.12s ease, background-color 0.12s ease;
+      }
+
+      .mode-option:hover {
+        background: var(--bg);
+      }
+
+      .mode-option input {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid var(--border);
+        border-radius: 50%;
+        margin-top: 3px;
+        flex-shrink: 0;
+        position: relative;
+        cursor: pointer;
+      }
+
+      .mode-option input:checked {
+        border-color: var(--accent);
+        border-width: 5px;
+      }
+
+      .mode-option:has(input:checked) {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .mode-option-content {
+        flex: 1;
+      }
+
+      .mode-option-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .mode-option-description {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-top: 2px;
+      }
+
+      .badge {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .badge-muted {
+        background: var(--code-bg);
+        color: var(--text-muted);
+      }
+
+      label.field-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      input[type='password'],
+      input[type='text'],
+      select {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.12s ease, box-shadow 0.12s ease;
+      }
+
+      input[type='password']:focus,
+      input[type='text']:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='%23656d76'%3E%3Cpath d='M4.427 7.427a.75.75 0 0 1 1.146-.02L8 10.148l2.427-2.741a.75.75 0 1 1 1.146.02l-3 3.5a.75.75 0 0 1-1.146 0l-3-3.5Z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        padding-right: 32px;
+      }
+
+      .field-hint {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 6px;
+      }
+
+      .field-hint a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .field-hint a:hover {
+        text-decoration: underline;
+      }
+
+      code {
+        background: var(--code-bg);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+
+      .save-bar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .status {
+        font-size: 13px;
+        color: var(--accent);
+        font-weight: 500;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .status.visible {
+        opacity: 1;
+      }
+
+      .status.error {
+        color: var(--danger);
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.12s ease;
+      }
+
+      button.primary:hover {
+        background: var(--accent-hover);
+      }
+
+      button.primary:active {
+        transform: translateY(0.5px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <img src="/icon-128.png" alt="Octo Actions" />
+        <div>
+          <h1>Octo Actions</h1>
+          <p>Quick action buttons for GitHub pull requests</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <h2>Mode</h2>
+        <p class="card-description">
+          Choose how Octo Actions performs actions on pull requests.
+        </p>
+
+        <div class="mode-options">
+          <label class="mode-option">
+            <input type="radio" name="mode" value="api" checked />
+            <div class="mode-option-content">
+              <div class="mode-option-title">
+                API Mode
+                <span class="badge">Recommended</span>
+              </div>
+              <div class="mode-option-description">
+                Uses the GitHub API with your personal access token. Fast, reliable, and
+                works on any PR.
+              </div>
+            </div>
+          </label>
+
+          <label class="mode-option">
+            <input type="radio" name="mode" value="ui" />
+            <div class="mode-option-content">
+              <div class="mode-option-title">
+                UI-only Mode
+                <span class="badge badge-muted">No token</span>
+              </div>
+              <div class="mode-option-description">
+                Drives GitHub's existing buttons directly. No token required, but slower
+                and depends on GitHub's UI.
+              </div>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <section class="card" id="token-card">
+        <h2>GitHub Token</h2>
+        <p class="card-description" id="token-description">
+          Personal access token with <code>repo</code> scope. Required for API mode.
+        </p>
+
+        <label class="field-label" for="token">Token</label>
+        <input type="password" id="token" placeholder="ghp_..." autocomplete="off" />
+        <p class="field-hint">
+          <a
+            href="https://github.com/settings/tokens/new?description=Octo%20Actions&scopes=repo"
+            target="_blank"
+            rel="noopener"
+            >Create a new token on GitHub →</a
+          >
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Merge Preferences</h2>
+        <p class="card-description">
+          Default method used when merging a pull request.
+        </p>
+
+        <label class="field-label" for="merge-method">Merge method</label>
+        <select id="merge-method">
+          <option value="squash">Squash and merge</option>
+          <option value="merge">Create a merge commit</option>
+          <option value="rebase">Rebase and merge</option>
+        </select>
+      </section>
+
+      <div class="save-bar">
+        <span class="status" id="status"></span>
+        <button class="primary" id="save">Save settings</button>
+      </div>
+    </div>
+
+    <script type="module" src="../lib/options.ts"></script>
+  </body>
+</html>
