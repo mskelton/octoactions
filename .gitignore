@@ -1,3 +1,6 @@
 node_modules
 .wxt/
 .output/
+.env
+.env.submit
+.env.submit.public

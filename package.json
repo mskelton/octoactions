@@ -1,12 +1,15 @@
 {
   "name": "octoactions",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
     "zip": "wxt zip",
+    "submit": "wxt submit --chrome-zip .output/octoactions-$npm_package_version-chrome.zip",
+    "submit:init": "publish-extension init",
+    "release": "npm run zip && npm run submit",
     "format": "oxfmt ."
   },
   "dependencies": {
