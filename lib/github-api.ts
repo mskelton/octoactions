@@ -96,16 +96,43 @@ export async function approvePr(pr: PrLocation): Promise<void> {
 }
 
 export async function mergePr(pr: PrLocation): Promise<void> {
-  const mergeMethod = (await storage.getItem<string>('local:merge-method')) || 'SQUASH'
+  const mergeMethod = (
+    (await storage.getItem<string>('local:merge-method')) || 'SQUASH'
+  ).toUpperCase()
 
   const pullRequestId = await getPrNodeId(pr)
-  await graphqlMutation(
-    `mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
-      enablePullRequestAutoMerge(input: { pullRequestId: $pullRequestId, mergeMethod: $mergeMethod }) {
-        pullRequest { autoMergeRequest { enabledAt } }
-      }
-    }`,
-    { pullRequestId, mergeMethod: mergeMethod.toUpperCase() },
-    'Failed to enable auto-merge',
+  const res = await githubFetch('/graphql', {
+    method: 'POST',
+    body: JSON.stringify({
+      query: `mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
+        enablePullRequestAutoMerge(input: { pullRequestId: $pullRequestId, mergeMethod: $mergeMethod }) {
+          pullRequest { autoMergeRequest { enabledAt } }
+        }
+      }`,
+      variables: { pullRequestId, mergeMethod },
+    }),
+  })
+
+  const body = (await res.json()) as { errors?: { message?: string }[] }
+  if (!body.errors?.length) return
+
+  const isCleanStatus = body.errors.some((e) =>
+    e.message?.includes('Pull request is in clean status'),
   )
+
+  if (!isCleanStatus) {
+    throw new Error(`Failed to enable auto-merge: ${body.errors[0].message}`)
+  }
+
+  const mergeRes = await githubFetch(`/repos/${pr.owner}/${pr.repo}/pulls/${pr.number}/merge`, {
+    method: 'PUT',
+    body: JSON.stringify({ merge_method: mergeMethod.toLowerCase() }),
+  })
+
+  if (!mergeRes.ok) {
+    const mergeBody = await mergeRes.json().catch(() => ({}))
+    throw new Error(
+      `Failed to merge PR: ${mergeRes.status} ${mergeBody.message || mergeRes.statusText}`,
+    )
+  }
 }
