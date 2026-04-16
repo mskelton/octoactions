@@ -3,16 +3,11 @@ import { storage } from 'wxt/utils/storage'
 type Mode = 'api' | 'ui'
 
 const modeInputs = document.querySelectorAll<HTMLInputElement>('input[name="mode"]')
+const tokenCard = document.getElementById('token-card') as HTMLElement
 const tokenInput = document.getElementById('token') as HTMLInputElement
-const tokenDescription = document.getElementById('token-description') as HTMLParagraphElement
 const mergeMethodSelect = document.getElementById('merge-method') as HTMLSelectElement
 const saveButton = document.getElementById('save') as HTMLButtonElement
 const statusEl = document.getElementById('status') as HTMLSpanElement
-
-const TOKEN_COPY = {
-  api: 'Personal access token with <code>repo</code> scope. Required for API mode.',
-  ui: 'Optional in UI-only mode. If provided, actions will prefer the faster API path.',
-}
 
 function getSelectedMode(): Mode {
   const checked = document.querySelector<HTMLInputElement>('input[name="mode"]:checked')
@@ -20,7 +15,7 @@ function getSelectedMode(): Mode {
 }
 
 function applyMode(mode: Mode) {
-  tokenDescription.innerHTML = TOKEN_COPY[mode]
+  tokenCard.hidden = mode === 'ui'
 }
 
 async function loadSettings() {
