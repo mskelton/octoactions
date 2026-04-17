@@ -1,11 +1,4 @@
-import {
-  approvePr,
-  convertToDraft,
-  markReadyForReview,
-  mergePr,
-  parsePrUrl,
-  type PrLocation,
-} from '@/lib/github-api'
+import { getClient, type GitHubClient, parsePrUrl, type PrLocation } from '@/lib/github-api'
 
 export default defineContentScript({
   matches: ['https://github.com/*/pull/*'],
@@ -15,7 +8,7 @@ export default defineContentScript({
     let currentUrl = location.href
     let mounted = false
 
-    function tryMount() {
+    async function tryMount() {
       const pr = parsePrUrl(location.href)
       if (!pr) return
 
@@ -28,14 +21,16 @@ export default defineContentScript({
       if (!actionsContainer) return
       if (actionsContainer.querySelector('.octoactions-btn')) return
 
-      actionsContainer.append(createDraftToggleButton(pr))
+      const client = await getClient()
+
+      actionsContainer.append(createDraftToggleButton(pr, client))
 
       if (!isOwnPr()) {
         actionsContainer.append(
           createActionButton({
             title: 'Approve',
             icon: THUMBSUP_ICON,
-            action: () => approvePr(pr),
+            action: () => client.approve(pr),
           }),
         )
       }
@@ -44,7 +39,7 @@ export default defineContentScript({
         createActionButton({
           title: 'Merge',
           icon: MERGE_ICON,
-          action: () => mergePr(pr),
+          action: () => client.merge(pr),
         }),
       )
 
@@ -159,7 +154,7 @@ function createActionButton({ title, icon, action }: ActionButtonOptions): HTMLB
   return button
 }
 
-function createDraftToggleButton(pr: PrLocation): HTMLButtonElement {
+function createDraftToggleButton(pr: PrLocation, client: GitHubClient): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'btn octoactions-btn'
@@ -181,7 +176,7 @@ function createDraftToggleButton(pr: PrLocation): HTMLButtonElement {
     const draft = isDraftPr()
     try {
       button.innerHTML = SPINNER_ICON
-      await (draft ? markReadyForReview(pr) : convertToDraft(pr))
+      await (draft ? client.markReadyForReview(pr) : client.convertToDraft(pr))
 
       button.innerHTML = CHECK_ICON
       setTimeout(() => updateDraftButton(button), 2000)
