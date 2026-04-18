@@ -22,6 +22,7 @@ export default defineContentScript({
       if (actionsContainer.querySelector('.octoactions-btn')) return
 
       const client = await getClient()
+      if (actionsContainer.querySelector('.octoactions-btn')) return
 
       actionsContainer.append(createDraftToggleButton(pr, client))
 
